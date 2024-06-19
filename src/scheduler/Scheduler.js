@@ -93,8 +93,11 @@ const Scheduler = ({version} = {}) => {
     infiniteScrollingEnabled: true,
     infiniteScrollingStepDays: 100,
 
+    multiMoveVerticalMode: 'All',
     rectangleSelectMode: 'Free',
     rectangleSelectHandling: 'EventSelect',
+    allowMultiMove: true,
+    eventClickHandling: 'Select',
     onGridMouseDown: args => {
         args.action = 'RectangleSelect';
     },

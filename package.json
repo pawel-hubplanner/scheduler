@@ -7,7 +7,7 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.1.1",
     "@testing-library/user-event": "^13.5.0",
-    "daypilot-pro-react": "https://npm.daypilot.org/daypilot-pro-react/trial/2024.2.5951.tar.gz",
+    "daypilot-pro-react": "https://npm.daypilot.org/daypilot-pro-react/trial/2024.2.5957.tar.gz",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-scripts": "5.0.1",

@@ -2,37 +2,53 @@ import React, {useState, useRef, useEffect} from 'react';
 import {DayPilot, DayPilotScheduler} from "daypilot-pro-react";
 import Zoom from "./Zoom";
 
+let id = 1;
+
+const events = new Array(12).fill(0).reduce((acc, elem, indx) => {
+
+  let temp = [];
+
+  const from = new DayPilot.Date(`2024-${indx < 10 ? `0${indx}` : indx}-01`);
+
+  for (let i = 0; i < 10; i++) {
+    const duration = Math.floor(Math.random() * 6) + 1; // 1 to 6
+    const startOffset = Math.floor(Math.random() * 6) + 1; // 1 to 6
+
+    const start = from.addDays(startOffset);
+    const end = start.addDays(duration);
+
+    const event = {
+      start: start,
+      end: end,
+      id: DayPilot.guid(),
+      resource: String.fromCharCode(65 + i),
+      text: `Event ${id}`
+    };
+    id = id + 1;
+    temp.push(event);
+  }
+
+  return acc.concat(temp);
+}, [])
+
+
 const Scheduler = ({version} = {}) => {
   const getEventData = (from, to) => {
-    const events = [];
-
-    // generate 10 new events
-    for (let i = 0; i < 10; i++) {
-        const duration = Math.floor(Math.random() * 6) + 1; // 1 to 6
-        const startOffset = Math.floor(Math.random() * 6) + 1; // 1 to 6
-
-        const start = from.addDays(startOffset);
-        const end = start.addDays(duration);
-
-        const event = {
-            start: start,
-            end: end,
-            id: DayPilot.guid(),
-            resource: String.fromCharCode(65 + i),
-            text: "Event"
-        };
-
-        events.push(event);
-    }
-
-    return events;
+    return events.filter(event => {
+      return event.end > from.addDays(-10) && event.start < to.addDays(10);
+    })
 }
 
 
+  const schedulerRef = useRef();
+
+  const getScheduler = () => schedulerRef.current.control;
+
   const [config, setConfig] = useState({
     days: 200,
-    scale: "CellDuration",
+    scale: "Day",
     cellDuration: 60,
+    cellWidth: 100,
     companyStartEndTimes: {
       "startMinute": 0,
       "endMinute": 0,
@@ -41,10 +57,9 @@ const Scheduler = ({version} = {}) => {
     },
     businessBeginsHour: 5,
     businessEndsHour: 20,
-    showNonBusiness: false,
+    showNonBusiness: true,
     timeHeaders: [
-        { groupBy: "Day", format: "dddd, MMMM d, yyyy" }, // Day header
-      { groupBy: "Hour", format: "h tt"} // Hour header
+        { groupBy: "Day", format: "MMMM d" }, // Day header
     ],
     treeEnabled: true,
     resources: [
@@ -86,24 +101,27 @@ const Scheduler = ({version} = {}) => {
 
     dynamicLoading: true,
     onScroll: async args => {
-      console.log('\n');
-      console.group('onScroll');
-
-      console.groupEnd();
-
       args.async = true;
 
       // simulating a server-side call
       setTimeout(() => {
-        args.events = getEventData(args.viewport.start, args.viewport.end);
+        const scheduler = getScheduler();
+        const fetchedEvents = getEventData(args.viewport.start, args.viewport.end);
+
+        const mapped = scheduler.events.all().map(event => event.id()).reduce((acc, id) => {
+          acc[id] = id;
+          return acc;
+        }, {})
+
+
+        const newEvents = fetchedEvents.filter(event => !mapped[event.id]);
+
+        args.events = scheduler.events.all().map(event => event.data).concat(newEvents);
         args.loaded();
       }, 1000);
     },
   });
 
-  const schedulerRef = useRef();
-
-  const getScheduler = () => schedulerRef.current.control;
 
   const zoomChange = (args) => {
     switch (args.level) {
@@ -151,46 +169,14 @@ const Scheduler = ({version} = {}) => {
           {name: "BMW X1", seats: 5, doors: 4, transmission: "Automatic", id: "E"},
           {name: "Jeep Wrangler", seats: 5, doors: 4, transmission: "Automatic", id: "F"},
           {name: "Range Rover", seats: 5, doors: 4, transmission: "Automatic", id: "G"},
+          {name: "Tesla X", seats: 5, doors: 4, transmission: "Automatic", id: "H"},
+          {name: "Mercedes GLA", seats: 5, doors: 4, transmission: "Automatic", id: "I"},
+          {name: "Audi Q7", seats: 5, doors: 4, transmission: "Automatic", id: "J"},
         ]
       },
     ];
 
-    const events = [
-      {id: 101, text: "Reservation 101", start: "2023-11-02T00:00:00", end: "2023-11-05T00:00:00", resource: "A"},
-      {id: 102, text: "Reservation 102", start: "2023-11-06T00:00:00", end: "2023-11-10T00:00:00", resource: "A"},
-      {
-        id: 103,
-        text: "Reservation 103",
-        start: "2023-11-03T00:00:00",
-        end: "2023-11-10T00:00:00",
-        resource: "C",
-        backColor: "#6fa8dc",
-        locked: true
-      },
-      {
-        id: 104,
-        text: "Reservation 104",
-        start: "2023-11-02T00:00:00",
-        end: "2023-11-08T00:00:00",
-        resource: "E",
-        backColor: "#f6b26b",
-        plus: true
-      },
-      {
-        id: 105,
-        text: "Reservation 105",
-        start: "2023-11-03T00:00:00",
-        end: "2023-11-09T00:00:00",
-        resource: "G",
-      },
-      {
-        id: 106,
-        text: "Reservation 106",
-        start: "2023-11-02T00:00:00",
-        end: "2023-11-07T00:00:00",
-        resource: "B",
-      },
-    ];
+    const events = [];
 
     getScheduler().update({
       resources,
